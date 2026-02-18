@@ -1,6 +1,22 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
+import {
+  ArrowLeft,
+  MapPin,
+  Building2,
+  Star,
+  DollarSign,
+  Users,
+  Pencil,
+  Trash2,
+  Briefcase,
+  Calendar,
+  Tag,
+  IndianRupee,
+} from 'lucide-react';
 import { Company, Application } from '../types';
+import { Card, CardContent } from './ui/Card';
+import Button from './ui/Button';
+import Badge from './ui/Badge';
 
 interface CompanyDetailProps {
   company: Company;
@@ -10,107 +26,398 @@ interface CompanyDetailProps {
   onDelete: (id: string) => void;
 }
 
-const CompanyDetail: React.FC<CompanyDetailProps> = ({ company, applications, onBack, onEdit, onDelete }) => {
-  return (
-    <div className="max-w-4xl mx-auto animate-in slide-in-from-right-4 duration-400">
-      <button 
-        onClick={onBack}
-        className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-8 group transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 rounded-sm px-2 py-1 -ml-2"
-        aria-label="Back to Company Hub"
-      >
-        <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-        <span className="text-sm font-medium">Back to Hub</span>
-      </button>
+function cn(...classes: (string | undefined | null | false)[]): string {
+  return classes.filter(Boolean).join(' ');
+}
 
-      <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
-        <div className="h-32 bg-slate-900 flex items-end px-12 relative">
-          <div className="w-24 h-24 bg-white border-4 border-white rounded-sm absolute -bottom-12 shadow-md flex items-center justify-center font-black text-4xl text-slate-200" aria-hidden="true">
-            {company.name[0]}
-          </div>
-          <div className="absolute top-4 right-4 flex gap-2">
-            <button onClick={() => onEdit(company)} className="px-4 py-2 bg-white/10 text-white text-xs font-bold rounded-sm hover:bg-white/20 backdrop-blur-md transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none">Edit</button>
-            <button onClick={() => onDelete(company.id)} className="px-4 py-2 bg-rose-500/10 text-rose-300 text-xs font-bold rounded-sm hover:bg-rose-500/20 backdrop-blur-md transition-colors focus:ring-2 focus:ring-rose-500 focus:outline-none">Delete</button>
+const STAR_INDICES = [1, 2, 3, 4, 5] as const;
+
+const STATUS_VARIANT: Record<string, 'success' | 'error' | 'warning' | 'secondary' | 'default'> = {
+  Offer: 'success',
+  Rejected: 'error',
+  Interviewing: 'warning',
+  Technical: 'warning',
+  HR: 'warning',
+  Screening: 'warning',
+  Applied: 'default',
+  Ghosted: 'secondary',
+};
+
+const StarRating: React.FC<{ rating: number; size?: 'sm' | 'md' }> = React.memo(
+  ({ rating, size = 'sm' }) => (
+    <div
+      className="flex gap-0.5"
+      role="img"
+      aria-label={`Culture rating: ${rating} out of 5 stars`}
+    >
+      {STAR_INDICES.map((s) => (
+        <Star
+          key={s}
+          className={cn(
+            s <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200',
+            size === 'sm' ? 'h-4 w-4' : 'h-5 w-5',
+          )}
+          aria-hidden="true"
+          focusable="false"
+        />
+      ))}
+    </div>
+  ),
+);
+
+StarRating.displayName = 'StarRating';
+
+function formatDate(dateStr: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date(dateStr));
+  } catch {
+    return dateStr;
+  }
+}
+
+const CompanyDetail: React.FC<CompanyDetailProps> = ({
+  company,
+  applications,
+  onBack,
+  onEdit,
+  onDelete,
+}) => {
+  const initials = company.name.slice(0, 2).toUpperCase();
+
+  const sortedApps = useMemo(
+    () =>
+      [...applications].sort(
+        (a, b) => new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime(),
+      ),
+    [applications],
+  );
+
+  const statusSummary = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const app of applications) {
+      counts[app.status] = (counts[app.status] || 0) + 1;
+    }
+    return counts;
+  }, [applications]);
+
+  return (
+    <article
+      className="mx-auto max-w-5xl"
+      aria-labelledby="company-detail-heading"
+    >
+      {/* Back navigation */}
+      <nav aria-label="Breadcrumb" className="mb-6">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="group -ml-2 gap-2 text-slate-500 hover:text-slate-900"
+        >
+          <ArrowLeft
+            className="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
+            aria-hidden="true"
+            focusable="false"
+          />
+          Back to Company Hub
+        </Button>
+      </nav>
+
+      {/* ── Hero banner ──────────────────────────────────────── */}
+      <Card padding="none" className="overflow-hidden">
+        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+          {/* Decorative pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage:
+                'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+              backgroundSize: '24px 24px',
+            }}
+            aria-hidden="true"
+          />
+
+          <div className="relative px-6 pb-6 pt-8 sm:px-10 sm:pt-10">
+            {/* Top actions */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div
+                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border-2 border-white/10 bg-white/10 text-2xl font-black text-white backdrop-blur-sm sm:h-20 sm:w-20 sm:text-3xl"
+                  aria-hidden="true"
+                >
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <h1
+                    id="company-detail-heading"
+                    className="truncate text-xl font-bold text-white sm:text-2xl"
+                  >
+                    {company.name}
+                  </h1>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="flex items-center gap-1.5 text-sm text-slate-300">
+                      <MapPin
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      />
+                      {company.location}
+                    </span>
+                    <span className="flex items-center gap-1.5 text-sm text-slate-300">
+                      <Building2
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      />
+                      {company.type}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onEdit(company)}
+                  aria-label={`Edit ${company.name}`}
+                  className="border border-white/10 bg-white/5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white"
+                >
+                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" focusable="false" />
+                  <span className="hidden sm:inline">Edit</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDelete(company.id)}
+                  aria-label={`Delete ${company.name}`}
+                  className="border border-red-500/20 bg-red-500/10 text-red-300 backdrop-blur-sm hover:bg-red-500/20 hover:text-red-200"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" focusable="false" />
+                  <span className="hidden sm:inline">Delete</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Quick stats row */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                {
+                  label: 'Fresher Pay',
+                  value: company.fresherSalary,
+                  icon: IndianRupee,
+                },
+                {
+                  label: 'Team Size',
+                  value: company.employeeRange,
+                  icon: Users,
+                },
+                {
+                  label: 'Applications',
+                  value: applications.length,
+                  icon: Briefcase,
+                },
+                {
+                  label: 'Culture',
+                  value: null,
+                  icon: Star,
+                  custom: <StarRating rating={company.cultureRating} size="sm" />,
+                },
+              ].map((stat) => {
+                const Icon = stat.icon;
+                return (
+                  <div
+                    key={stat.label}
+                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm"
+                  >
+                    <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      <Icon
+                        className="h-3 w-3 shrink-0"
+                        aria-hidden="true"
+                        focusable="false"
+                      />
+                      {stat.label}
+                    </dt>
+                    <dd className="mt-1 text-lg font-bold tabular-nums text-white">
+                      {stat.custom ?? stat.value}
+                    </dd>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="px-12 pt-20 pb-12">
-          <div className="flex justify-between items-start mb-8">
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 mb-2">{company.name}</h1>
-              <div className="flex gap-4 text-sm text-slate-500">
-                <span className="flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>{company.location}</span>
-                <span className="flex items-center gap-1.5"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>{company.type}</span>
+        {/* ── Body ──────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 gap-0 divide-y divide-slate-100 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+          {/* Main content — 2/3 */}
+          <div className="lg:col-span-2">
+            {/* About */}
+            {company.description && (
+              <section className="px-6 py-6 sm:px-10" aria-labelledby="about-heading">
+                <h2
+                  id="about-heading"
+                  className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400"
+                >
+                  About
+                </h2>
+                <p className="text-sm leading-relaxed text-slate-600">
+                  {company.description}
+                </p>
+              </section>
+            )}
+
+            {/* Applications */}
+            <section
+              className="border-t border-slate-100 px-6 py-6 sm:px-10"
+              aria-labelledby="positions-heading"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2
+                  id="positions-heading"
+                  className="text-xs font-bold uppercase tracking-widest text-slate-400"
+                >
+                  Applied Positions
+                </h2>
+                {applications.length > 0 && (
+                  <span className="text-xs font-semibold tabular-nums text-slate-500">
+                    {applications.length} total
+                  </span>
+                )}
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Culture Rating</div>
-              <div className="flex gap-1 justify-end" aria-label={`Rated ${company.cultureRating} out of 5 stars`}>
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className={`w-3 h-3 rounded-full ${i < company.cultureRating ? 'bg-amber-400' : 'bg-slate-100'}`} aria-hidden="true"></div>
-                ))}
-              </div>
-            </div>
+
+              {sortedApps.length > 0 ? (
+                <ul className="space-y-2" aria-label="Applications at this company">
+                  {sortedApps.map((app) => (
+                    <li
+                      key={app.id}
+                      className="flex items-center gap-4 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3.5 transition-colors hover:border-slate-200 hover:bg-slate-50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-slate-900">
+                          {app.position}
+                        </p>
+                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
+                          <Calendar
+                            className="h-3 w-3 shrink-0"
+                            aria-hidden="true"
+                            focusable="false"
+                          />
+                          <time dateTime={app.dateApplied} className="tabular-nums">
+                            {formatDate(app.dateApplied)}
+                          </time>
+                        </p>
+                      </div>
+
+                      <div className="flex shrink-0 items-center gap-2">
+                        {app.type && (
+                          <Badge variant="secondary" size="sm">
+                            {app.type}
+                          </Badge>
+                        )}
+                        <Badge
+                          variant={STATUS_VARIANT[app.status] ?? 'default'}
+                          size="sm"
+                        >
+                          {app.status}
+                        </Badge>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="rounded-lg border border-dashed border-slate-200 px-6 py-12 text-center">
+                  <Briefcase
+                    className="mx-auto h-8 w-8 text-slate-300"
+                    aria-hidden="true"
+                    focusable="false"
+                  />
+                  <p className="mt-2 text-sm text-slate-500">
+                    No applications recorded yet.
+                  </p>
+                </div>
+              )}
+            </section>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="md:col-span-2 space-y-8">
-              <section>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">About the Company</h3>
-                <p className="text-slate-600 leading-relaxed text-sm">{company.description}</p>
-              </section>
-
-              <section>
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Applied Positions</h3>
-                <div className="space-y-3">
-                  {applications.length > 0 ? applications.map(app => (
-                    <div key={app.id} className="p-4 border border-slate-100 bg-slate-50/50 flex justify-between items-center group hover:border-slate-200 transition-colors rounded-sm">
-                      <div>
-                        <div className="font-bold text-sm text-slate-900">{app.position}</div>
-                        <div className="text-xs text-slate-400">Applied on {app.dateApplied}</div>
-                      </div>
-                      <span className="text-[10px] font-bold px-2 py-1 bg-white border border-slate-200 rounded-sm text-slate-600 group-hover:bg-slate-900 group-hover:text-white group-hover:border-slate-900 transition-all">{app.status}</span>
-                    </div>
-                  )) : (
-                    <p className="text-sm text-slate-400 italic">No applications recorded yet.</p>
-                  )}
-                </div>
-              </section>
-            </div>
-
-            <div className="space-y-8">
-              <section className="bg-slate-50 p-6 border border-slate-100 rounded-sm">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Quick Stats</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">Avg. Fresher Pay</div>
-                    <div className="text-lg font-bold text-slate-900">{company.fresherSalary}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase">Team Size</div>
-                    <div className="text-lg font-bold text-slate-900">{company.employeeRange}</div>
-                  </div>
-                </div>
-              </section>
-
-              {company.customFields.length > 0 && (
-                <section>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Extra Details</h3>
-                  <div className="space-y-4">
-                    {company.customFields.map((field, i) => (
-                      <div key={i}>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase">{field.label}</div>
-                        <div className="text-sm text-slate-900">{field.value}</div>
+          {/* Sidebar — 1/3 */}
+          <aside className="lg:col-span-1">
+            {/* Status breakdown */}
+            {Object.keys(statusSummary).length > 0 && (
+              <section
+                className="px-6 py-6 sm:px-8"
+                aria-labelledby="status-breakdown-heading"
+              >
+                <h2
+                  id="status-breakdown-heading"
+                  className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-400"
+                >
+                  Status Breakdown
+                </h2>
+                <dl className="space-y-2.5">
+                  {Object.entries(statusSummary)
+                    .sort(([, a], [, b]) => Number(b) - Number(a))
+                    .map(([status, count]) => (
+                      <div key={status} className="flex items-center justify-between">
+                        <dt>
+                          <Badge
+                            variant={STATUS_VARIANT[status] ?? 'default'}
+                            size="sm"
+                          >
+                            {status}
+                          </Badge>
+                        </dt>
+                        <dd className="text-sm font-bold tabular-nums text-slate-900">
+                          {count}
+                        </dd>
                       </div>
                     ))}
-                  </div>
-                </section>
-              )}
-            </div>
-          </div>
+                </dl>
+              </section>
+            )}
+
+            {/* Custom fields */}
+            {company.customFields.length > 0 && (
+              <section
+                className="border-t border-slate-100 px-6 py-6 sm:px-8"
+                aria-labelledby="extra-details-heading"
+              >
+                <h2
+                  id="extra-details-heading"
+                  className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-400"
+                >
+                  Extra Details
+                </h2>
+                <dl className="space-y-3">
+                  {company.customFields.map((field, i) => (
+                    <div key={i}>
+                      <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        <Tag
+                          className="h-3 w-3 shrink-0"
+                          aria-hidden="true"
+                          focusable="false"
+                        />
+                        {field.label}
+                      </dt>
+                      <dd className="mt-0.5 text-sm font-medium text-slate-900">
+                        {field.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            )}
+          </aside>
         </div>
-      </div>
-    </div>
+      </Card>
+    </article>
   );
 };
 
-export default CompanyDetail;
+export default React.memo(CompanyDetail);

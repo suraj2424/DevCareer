@@ -1,55 +1,31 @@
 
-import React, { useState, useMemo } from 'react';
-import { ViewState, Company, Application, ApplicationStatus, CompanyType } from './types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ViewState, Company, Application, ApplicationStatus, CompanyType, User, UserData } from './types';
+import hybridStorage from './utils/hybridStorage';
+import { Search } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ApplicationsList from './components/ApplicationsList';
 import CompaniesList from './components/CompaniesList';
 import CompanyDetail from './components/CompanyDetail';
 import Modal from './components/Modal';
-
-const INITIAL_COMPANIES: Company[] = [
-  {
-    id: '1',
-    name: 'TechFlow Systems',
-    description: 'A cutting-edge SaaS provider focusing on automation and cloud infrastructure.',
-    employeeRange: '100-500',
-    fresherSalary: '₹12-15 LPA',
-    location: 'Bangalore, India',
-    type: 'Product',
-    cultureRating: 4,
-    customFields: [{ label: 'Tech Stack', value: 'React, Go, AWS' }]
-  },
-  {
-    id: '2',
-    name: 'GlobalConsult',
-    description: 'Boutique consultancy for Fortune 500 companies specializing in digital transformation.',
-    employeeRange: '1000+',
-    fresherSalary: '₹6-8 LPA',
-    location: 'Remote',
-    type: 'Consultancy',
-    cultureRating: 3,
-    customFields: []
-  }
-];
-
-const INITIAL_APPS: Application[] = [
-  {
-    id: '101',
-    companyId: '1',
-    position: 'Frontend Engineer Intern',
-    dateApplied: '2023-11-15',
-    status: 'Interviewing',
-    notes: 'Technical round scheduled for Monday.'
-  }
-];
+import Login from './components/Login';
+import Register from './components/Register';
+import Profile from './components/Profile';
+import Button from './components/ui/Button';
+import Input from './components/ui/Input';
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  
   const [view, setView] = useState<ViewState>('dashboard');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<Company[]>(INITIAL_COMPANIES);
-  const [applications, setApplications] = useState<Application[]>(INITIAL_APPS);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
@@ -58,6 +34,57 @@ const App: React.FC = () => {
   
   // State for delete confirmation
   const [deleteIntent, setDeleteIntent] = useState<{ type: 'company' | 'application', id: string } | null>(null);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const initializeApp = async () => {
+      await hybridStorage.init();
+      
+      const storedUserId = localStorage.getItem('currentUserId');
+      if (storedUserId) {
+        const userData = await hybridStorage.exportUserData(storedUserId);
+        if (userData) {
+          setCurrentUser(userData.user);
+          setCompanies(userData.companies);
+          setApplications(userData.applications);
+          setIsAuthenticated(true);
+          await hybridStorage.updateUserLastLogin(storedUserId);
+        }
+      }
+    };
+    
+    initializeApp();
+  }, []);
+
+  const handleLogin = async (user: User) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    localStorage.setItem('currentUserId', user.id);
+    
+    // Load user data
+    const userData = await hybridStorage.exportUserData(user.id);
+    if (userData) {
+      setCompanies(userData.companies);
+      setApplications(userData.applications);
+    }
+  };
+
+  const handleRegister = async (user: User) => {
+    await handleLogin(user);
+  };
+
+  const handleUpdateUser = (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setIsAuthenticated(false);
+    setCompanies([]);
+    setApplications([]);
+    localStorage.removeItem('currentUserId');
+    setView('dashboard');
+  };
 
   const filteredCompanies = useMemo(() => {
     return companies.filter(c => 
@@ -76,13 +103,19 @@ const App: React.FC = () => {
     });
   }, [applications, companies, searchQuery]);
 
-  const handleAddCompany = (newCompany: Omit<Company, 'id'>) => {
+  const handleAddCompany = async (newCompany: Omit<Company, 'id'>) => {
+    if (!currentUser) return;
+    
     const company = { ...newCompany, id: Math.random().toString(36).substr(2, 9) };
+    await hybridStorage.saveCompany(currentUser.id, company);
     setCompanies(prev => [...prev, company]);
     setIsModalOpen(false);
   };
 
-  const handleUpdateCompany = (updatedCompany: Company) => {
+  const handleUpdateCompany = async (updatedCompany: Company) => {
+    if (!currentUser) return;
+    
+    await hybridStorage.updateCompany(updatedCompany);
     setCompanies(prev => prev.map(c => c.id === updatedCompany.id ? updatedCompany : c));
     setIsModalOpen(false);
   };
@@ -99,11 +132,12 @@ const App: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    if (!deleteIntent) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteIntent || !currentUser) return;
 
     if (deleteIntent.type === 'company') {
       const id = deleteIntent.id;
+      await hybridStorage.deleteCompany(currentUser.id, id);
       setCompanies(prev => prev.filter(c => c.id !== id));
       setApplications(prev => prev.filter(a => a.companyId !== id));
       if (selectedCompanyId === id) {
@@ -112,6 +146,7 @@ const App: React.FC = () => {
       }
     } else if (deleteIntent.type === 'application') {
       const id = deleteIntent.id;
+      await hybridStorage.deleteApplication(currentUser.id, id);
       setApplications(prev => prev.filter(a => a.id !== id));
     }
     
@@ -119,13 +154,19 @@ const App: React.FC = () => {
     setDeleteIntent(null);
   };
 
-  const handleAddApplication = (newApp: Omit<Application, 'id'>) => {
+  const handleAddApplication = async (newApp: Omit<Application, 'id'>) => {
+    if (!currentUser) return;
+    
     const app = { ...newApp, id: Math.random().toString(36).substr(2, 9) };
+    await hybridStorage.saveApplication(currentUser.id, app);
     setApplications(prev => [...prev, app]);
     setIsModalOpen(false);
   };
 
-  const handleUpdateApplication = (updatedApp: Application) => {
+  const handleUpdateApplication = async (updatedApp: Application) => {
+    if (!currentUser) return;
+    
+    await hybridStorage.updateApplication(updatedApp);
     setApplications(prev => prev.map(a => a.id === updatedApp.id ? updatedApp : a));
     setIsModalOpen(false);
   };
@@ -144,42 +185,68 @@ const App: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  // Show login/register if not authenticated
+  if (!isAuthenticated) {
+    if (authView === 'login') {
+      return (
+        <Login 
+          onLogin={handleLogin}
+          onSwitchToRegister={() => setAuthView('register')}
+        />
+      );
+    } else {
+      return (
+        <Register 
+          onRegister={handleRegister}
+          onSwitchToLogin={() => setAuthView('login')}
+        />
+      );
+    }
+  }
+
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      <Sidebar currentView={view} setView={(v) => { setView(v); setSelectedCompanyId(null); }} />
+      <Sidebar 
+        currentView={view} 
+        setView={(v) => { setView(v); setSelectedCompanyId(null); }}
+        collapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(v => !v)}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
       
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0">
           <div className="flex items-center flex-1 max-w-xl">
-            <svg className="w-5 h-5 text-slate-400 absolute ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input 
-              type="text" 
-              placeholder="Search..." 
+            <Input
+              type="text"
+              placeholder="Search..."
               aria-label="Search companies and applications"
-              className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none focus:ring-2 focus:ring-blue-500 rounded-sm text-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              icon={<Search className="w-5 h-5 text-slate-700" />}
             />
           </div>
           <div className="flex gap-3">
-            <button 
+            <Button 
               onClick={() => openCreateModal('company')}
-              className="px-4 py-2 border border-slate-200 text-slate-700 text-sm font-medium rounded-sm hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              variant="outline"
+              size="sm"
             >
               Add Company
-            </button>
-            <button 
+            </Button>
+            <Button 
               onClick={() => openCreateModal('application')}
-              className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-sm hover:bg-slate-800 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+              variant="primary"
+              size="sm"
             >
-              New App
-            </button>
+              New Application
+            </Button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-8">
           {view === 'dashboard' && (
             <Dashboard 
               apps={applications} 
@@ -191,8 +258,11 @@ const App: React.FC = () => {
             <ApplicationsList 
               apps={filteredApps} 
               companies={companies} 
-              onUpdateStatus={(id, status) => {
-                setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+              onUpdateStatus={async (id, status) => {
+                if (currentUser) {
+                  await hybridStorage.updateApplicationStatus(currentUser.id, id, status);
+                  setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+                }
               }}
               onEdit={(app) => openEditModal('application', app)}
               onDelete={initiateDeleteApplication}
@@ -213,6 +283,12 @@ const App: React.FC = () => {
               onBack={() => setView('companies')}
               onEdit={(c) => openEditModal('company', c)}
               onDelete={initiateDeleteCompany}
+            />
+          )}
+          {view === 'profile' && currentUser && (
+            <Profile 
+              currentUser={currentUser}
+              onUpdateUser={handleUpdateUser}
             />
           )}
         </div>
