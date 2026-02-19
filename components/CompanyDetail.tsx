@@ -11,6 +11,7 @@ import {
   Calendar,
   Tag,
   IndianRupee,
+  ExternalLink,
 } from 'lucide-react';
 import { Company, Application } from '../types';
 import { Card, CardContent } from './ui/Card';
@@ -225,6 +226,19 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
               </div>
 
               <div className="flex shrink-0 gap-2">
+                {company.careersLink && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(company.careersLink, '_blank', 'noopener,noreferrer')}
+                    aria-label={`View careers at ${company.name}`}
+                    className="border border-white/10 bg-white/5 text-white backdrop-blur-sm hover:bg-white/15 hover:text-white"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" focusable="false" />
+                    <span className="hidden sm:inline">Careers</span>
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
@@ -308,14 +322,14 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
             {/* Applications */}
             <section
               className="border-t border-slate-100 px-6 py-5"
-              aria-labelledby="positions-heading"
+              aria-labelledby="roles-heading"
             >
               <div className="mb-4 flex items-center justify-between">
                 <h2
-                  id="positions-heading"
+                  id="roles-heading"
                   className="text-xs font-bold uppercase tracking-widest text-slate-400"
                 >
-                  Applied Positions
+                  Applied Roles
                 </h2>
                 {applications.length > 0 && (
                   <span className="text-xs font-semibold tabular-nums text-slate-500">
@@ -333,7 +347,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-900">
-                          {app.position}
+                          {app.role}
                         </p>
                         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
                           <Calendar

@@ -19,6 +19,8 @@ interface ApplicationsListProps {
   onUpdateStatus: (id: string, status: ApplicationStatus) => void;
   onEdit: (app: Application) => void;
   onDelete: (id: string) => void;
+  onCompanyClick: (companyId: string) => void;
+  onCleanupOrphanedApps: () => void;
 }
 
 function cn(...classes: (string | undefined | null | false)[]): string {
@@ -103,6 +105,8 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
   onUpdateStatus,
   onEdit,
   onDelete,
+  onCompanyClick,
+  onCleanupOrphanedApps,
 }) => {
   const companyMap = useMemo(() => {
     const map = new Map<string, Company>();
@@ -110,13 +114,35 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
     return map;
   }, [companies]);
 
+  // Debug: Log company mapping issues
+  useMemo(() => {
+    const orphanedApps = apps.filter(app => !companyMap.has(app.companyId));
+    if (orphanedApps.length > 0) {
+      console.warn('Found applications with invalid company IDs:', orphanedApps);
+      console.warn('Available company IDs:', Array.from(companyMap.keys()));
+    }
+  }, [apps, companyMap]);
+
+  // Filter out orphaned applications to prevent "Unknown" display
+  const validApps = useMemo(() => {
+    return apps.filter(app => companyMap.has(app.companyId));
+  }, [apps, companyMap]);
+
   const sortedApps = useMemo(
     () =>
-      [...apps].sort(
+      [...validApps].sort(
         (a, b) =>
           new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime(),
       ),
-    [apps],
+    [validApps],
+  );
+
+  const handleCompanyClick = useCallback(
+    (e: React.MouseEvent, companyId: string) => {
+      e.stopPropagation();
+      onCompanyClick(companyId);
+    },
+    [onCompanyClick],
   );
 
   const handleEdit = useCallback(
@@ -136,6 +162,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
   );
 
   const hasApps = sortedApps.length > 0;
+  const hasOrphanedApps = apps.length > validApps.length;
 
   return (
     <div className="space-y-8">
@@ -149,6 +176,18 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
             {hasApps
               ? `${sortedApps.length} application${sortedApps.length !== 1 ? 's' : ''} tracked.`
               : 'Manage and update your active job applications.'}
+            {hasOrphanedApps && (
+              <span className="mt-1 block text-amber-600">
+                ⚠️ {apps.length - validApps.length} application{(apps.length - validApps.length) !== 1 ? 's' : ''} with missing company data.
+                <button
+                  type="button"
+                  onClick={onCleanupOrphanedApps}
+                  className="ml-1 underline hover:no-underline"
+                >
+                  Clean up
+                </button>
+              </span>
+            )}
           </p>
         </div>
       </div>
@@ -174,7 +213,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                         scope="col"
                         className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                       >
-                        Position
+                        Role
                       </th>
                       <th
                         scope="col"
@@ -222,9 +261,14 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                 {initials}
                               </div>
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-bold text-slate-900">
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleCompanyClick(e, app.companyId)}
+                                  className="truncate text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors text-left"
+                                  aria-label={`View ${companyName} details`}
+                                >
                                   {companyName}
-                                </p>
+                                </button>
                                 {company?.location && (
                                   <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
                                     <MapPin
@@ -241,10 +285,10 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                             </div>
                           </td>
 
-                          {/* Position */}
+                          {/* Role */}
                           <td className="px-6 py-4">
                             <p className="text-sm font-semibold text-slate-900">
-                              {app.position}
+                              {app.role}
                             </p>
                           </td>
 
@@ -314,7 +358,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                   variant="ghost"
                                   size="sm"
                                   onClick={(e) => handleEdit(e, app)}
-                                  aria-label={`Edit ${app.position} at ${companyName}`}
+                                  aria-label={`Edit ${app.role} at ${companyName}`}
                                   className="h-8 w-8 p-0"
                                 >
                                   <Pencil
@@ -332,7 +376,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                   onClick={(e) =>
                                     handleDelete(e, app.id)
                                   }
-                                  aria-label={`Delete ${app.position} at ${companyName}`}
+                                  aria-label={`Delete ${app.role} at ${companyName}`}
                                   className="h-8 w-8 p-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                                 >
                                   <Trash2
@@ -379,10 +423,17 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <h3 className="truncate text-sm font-bold text-slate-900">
-                                {app.position}
+                                {app.role}
                               </h3>
                               <p className="mt-0.5 truncate text-xs text-slate-500">
-                                {companyName}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleCompanyClick(e, app.companyId)}
+                                  className="hover:text-blue-600 transition-colors"
+                                  aria-label={`View ${companyName} details`}
+                                >
+                                  {companyName}
+                                </button>
                                 {company?.location &&
                                   ` · ${company.location}`}
                               </p>
@@ -394,7 +445,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                 variant="ghost"
                                 size="sm"
                                 onClick={(e) => handleEdit(e, app)}
-                                aria-label={`Edit ${app.position} at ${companyName}`}
+                                aria-label={`Edit ${app.role} at ${companyName}`}
                                 className="h-7 w-7 p-0"
                               >
                                 <Pencil
@@ -410,7 +461,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                 onClick={(e) =>
                                   handleDelete(e, app.id)
                                 }
-                                aria-label={`Delete ${app.position} at ${companyName}`}
+                                aria-label={`Delete ${app.role} at ${companyName}`}
                                 className="h-7 w-7 p-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                               >
                                 <Trash2

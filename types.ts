@@ -16,6 +16,7 @@ export interface Company {
   type: CompanyType;
   cultureRating: number; // 1-5
   website?: string;
+  careersLink?: string;
   customFields: CustomField[];
 }
 
@@ -28,7 +29,6 @@ export type ApplicationRole = 'AI/ML' | 'ML' | 'Data' | 'Frontend' | 'Backend' |
 export interface Application {
   id: string;
   companyId: string;
-  position: string;
   dateApplied: string;
   status: ApplicationStatus;
   type: ApplicationType;

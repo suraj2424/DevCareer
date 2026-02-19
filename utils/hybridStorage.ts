@@ -244,7 +244,7 @@ class HybridStorage {
       return userData.applications.filter(app => {
         const company = companies.find(c => c.id === app.companyId);
         return (
-          app.position.toLowerCase().includes(lowerQuery) ||
+          app.role.toLowerCase().includes(lowerQuery) ||
           (company?.name.toLowerCase().includes(lowerQuery) ?? false)
         );
       });

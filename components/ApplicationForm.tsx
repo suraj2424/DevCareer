@@ -51,7 +51,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
   mode
 }) => {
   const [companyId, setCompanyId] = useState(initialData?.companyId || companies[0]?.id || '');
-  const [position, setPosition] = useState(initialData?.position || '');
   const [dateApplied, setDateApplied] = useState(initialData?.dateApplied || new Date().toISOString().split('T')[0]);
   const [status, setStatus] = useState<ApplicationStatus>(initialData?.status || 'Applied');
   const [type, setType] = useState<ApplicationType>(initialData?.type || 'full time');
@@ -64,9 +63,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
 
     if (!companyId) {
       newErrors.companyId = 'Please select a company';
-    }
-    if (!position.trim()) {
-      newErrors.position = 'Position is required';
     }
     if (!dateApplied) {
       newErrors.dateApplied = 'Date applied is required';
@@ -83,7 +79,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
 
     const applicationData = {
       companyId,
-      position: position.trim(),
       dateApplied,
       status,
       type,
@@ -130,20 +125,6 @@ const ApplicationForm: React.FC<ApplicationFormProps> = ({
           <span>{errors.companyId}</span>
         </p>
       )}
-
-      <Input
-        id="application-position"
-        label="Position"
-        placeholder="e.g., Software Engineer"
-        value={position}
-        error={errors.position}
-        required
-        autoComplete="organization-title"
-        onChange={(e) => {
-          setPosition(e.target.value);
-          if (errors.position) setErrors((prev) => ({ ...prev, position: '' }));
-        }}
-      />
 
       <Input
         id="application-date"

@@ -34,6 +34,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
   const [type, setType] = useState<CompanyType>(initialData?.type || 'Product');
   const [cultureRating, setCultureRating] = useState(initialData?.cultureRating || 3);
   const [customFields, setCustomFields] = useState<CustomField[]>(initialData?.customFields || []);
+  const [careersLink, setCareersLink] = useState(initialData?.careersLink || '');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const addField = () => setCustomFields([...customFields, { label: '', value: '' }]);
@@ -81,6 +82,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
       employeeRange: employeeRange.trim(),
       type,
       cultureRating,
+      careersLink: careersLink.trim(),
       customFields,
       createdAt: initialData?.createdAt || new Date().toISOString(),
       lastLogin: initialData?.lastLogin || new Date().toISOString()
@@ -166,6 +168,14 @@ const CompanyForm: React.FC<CompanyFormProps> = ({
           />
         </div>
       </div>
+
+      <Input
+        id="careers-link"
+        label="Careers Page Link"
+        placeholder="https://company.com/careers"
+        value={careersLink}
+        onChange={(e) => setCareersLink(e.target.value)}
+      />
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">Culture Rating</label>

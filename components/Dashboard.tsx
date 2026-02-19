@@ -352,7 +352,7 @@ const Dashboard: React.FC<DashboardProps> = ({ apps, companies, onViewApps }) =>
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-slate-900">
-                          {app.position}
+                          {app.role}
                         </p>
                         <p className="truncate text-xs text-slate-500">
                           {company?.name ?? 'Unknown company'}

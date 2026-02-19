@@ -1,8 +1,7 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ViewState, Company, Application, ApplicationStatus, CompanyType, User, UserData } from './types';
 import hybridStorage from './utils/hybridStorage';
-import { Search } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import ApplicationsList from './components/ApplicationsList';
@@ -13,7 +12,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Profile from './components/Profile';
 import Button from './components/ui/Button';
-import Input from './components/ui/Input';
+import SearchInput from './components/SearchInput';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -77,6 +76,24 @@ const App: React.FC = () => {
     setCurrentUser(updatedUser);
   };
 
+  // Handle search suggestion selection with navigation
+  const handleSearchSuggestionSelect = useCallback((suggestion: any) => {
+    setSearchQuery(suggestion.text);
+    
+    // Navigate based on suggestion type
+    if (suggestion.type === 'company' && suggestion.data) {
+      // Navigate to company detail page
+      setSelectedCompanyId(suggestion.data.id);
+      setView('company-detail');
+    } else if (suggestion.type === 'role' || suggestion.type === 'status' || suggestion.type === 'type') {
+      // Navigate to applications page with filter
+      setView('applications');
+    } else if (suggestion.type === 'location' || suggestion.type === 'salary' || suggestion.type === 'custom') {
+      // Navigate to companies page with filter
+      setView('companies');
+    }
+  }, [setSearchQuery, setSelectedCompanyId, setView]);
+
   const handleLogout = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
@@ -87,19 +104,71 @@ const App: React.FC = () => {
   };
 
   const filteredCompanies = useMemo(() => {
-    return companies.filter(c => 
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.location.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    if (!searchQuery.trim()) return companies;
+    
+    const query = searchQuery.toLowerCase();
+    return companies.filter(c => {
+      // Basic company info
+      const nameMatch = c.name.toLowerCase().includes(query);
+      const descriptionMatch = c.description.toLowerCase().includes(query);
+      const locationMatch = c.location.toLowerCase().includes(query);
+      const employeeRangeMatch = c.employeeRange.toLowerCase().includes(query);
+      const salaryMatch = c.fresherSalary.toLowerCase().includes(query);
+      const typeMatch = c.type.toLowerCase().includes(query);
+      
+      // Culture rating (convert to string for search)
+      const cultureMatch = c.cultureRating.toString().includes(query);
+      
+      // Website and careers link
+      const websiteMatch = c.website?.toLowerCase().includes(query) ?? false;
+      const careersLinkMatch = c.careersLink?.toLowerCase().includes(query) ?? false;
+      
+      // Custom fields
+      const customFieldsMatch = c.customFields.some(field => 
+        field.label.toLowerCase().includes(query) || 
+        field.value.toLowerCase().includes(query)
+      );
+      
+      return nameMatch || descriptionMatch || locationMatch || 
+             employeeRangeMatch || salaryMatch || typeMatch || 
+             cultureMatch || websiteMatch || careersLinkMatch || customFieldsMatch;
+    });
   }, [companies, searchQuery]);
 
   const filteredApps = useMemo(() => {
+    if (!searchQuery.trim()) return applications;
+    
+    const query = searchQuery.toLowerCase();
     return applications.filter(app => {
       const company = companies.find(c => c.id === app.companyId);
-      return (
-        app.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (company?.name.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
+      if (!company) return false;
+      
+      // Application-specific fields
+      const roleMatch = app.role.toLowerCase().includes(query);
+      const typeMatch = app.type.toLowerCase().includes(query);
+      const statusMatch = app.status.toLowerCase().includes(query);
+      const notesMatch = app.notes.toLowerCase().includes(query);
+      const salaryMatch = app.expectedSalary?.toLowerCase().includes(query) ?? false;
+      
+      // Company fields (same comprehensive search as filteredCompanies)
+      const companyNameMatch = company.name.toLowerCase().includes(query);
+      const descriptionMatch = company.description.toLowerCase().includes(query);
+      const locationMatch = company.location.toLowerCase().includes(query);
+      const employeeRangeMatch = company.employeeRange.toLowerCase().includes(query);
+      const companySalaryMatch = company.fresherSalary.toLowerCase().includes(query);
+      const typeMatchCompany = company.type.toLowerCase().includes(query);
+      const cultureMatch = company.cultureRating.toString().includes(query);
+      const websiteMatch = company.website?.toLowerCase().includes(query) ?? false;
+      const careersLinkMatch = company.careersLink?.toLowerCase().includes(query) ?? false;
+      const customFieldsMatch = company.customFields.some(field => 
+        field.label.toLowerCase().includes(query) || 
+        field.value.toLowerCase().includes(query)
       );
+      
+      return roleMatch || typeMatch || statusMatch || notesMatch || salaryMatch ||
+             companyNameMatch || descriptionMatch || locationMatch || 
+             employeeRangeMatch || companySalaryMatch || typeMatchCompany || 
+             cultureMatch || websiteMatch || careersLinkMatch || customFieldsMatch;
     });
   }, [applications, companies, searchQuery]);
 
@@ -118,6 +187,25 @@ const App: React.FC = () => {
     await hybridStorage.updateCompany(updatedCompany);
     setCompanies(prev => prev.map(c => c.id === updatedCompany.id ? updatedCompany : c));
     setIsModalOpen(false);
+  };
+
+  const handleCleanupOrphanedApps = async () => {
+    if (!currentUser) return;
+    
+    const orphanedApps = applications.filter(app => 
+      !companies.find(c => c.id === app.companyId)
+    );
+    
+    if (orphanedApps.length === 0) return;
+    
+    if (confirm(`Delete ${orphanedApps.length} orphaned application${orphanedApps.length !== 1 ? 's' : ''} with missing company data? This action cannot be undone.`)) {
+      for (const app of orphanedApps) {
+        await hybridStorage.deleteApplication(currentUser.id, app.id);
+      }
+      setApplications(prev => prev.filter(app => 
+        companies.find(c => c.id === app.companyId)
+      ));
+    }
   };
 
   const initiateDeleteCompany = (id: string) => {
@@ -218,14 +306,13 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0">
           <div className="flex items-center flex-1 max-w-xl">
-            <Input
-              type="text"
-              placeholder="Search..."
-              aria-label="Search companies and applications"
+            <SearchInput
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-              icon={<Search className="w-5 h-5 text-slate-700" />}
+              onChange={setSearchQuery}
+              onSelectSuggestion={handleSearchSuggestionSelect}
+              companies={companies}
+              applications={applications}
+              className="w-full"
             />
           </div>
           <div className="flex gap-3">
@@ -266,6 +353,8 @@ const App: React.FC = () => {
               }}
               onEdit={(app) => openEditModal('application', app)}
               onDelete={initiateDeleteApplication}
+              onCompanyClick={(id) => { setSelectedCompanyId(id); setView('company-detail'); }}
+              onCleanupOrphanedApps={handleCleanupOrphanedApps}
             />
           )}
           {view === 'companies' && (
