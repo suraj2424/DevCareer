@@ -5,7 +5,6 @@ import {
   Briefcase,
   MapPin,
   Calendar,
-  ArrowUpDown,
 } from 'lucide-react';
 import { Application, Company, ApplicationStatus } from '../types';
 import { Card, CardContent } from './ui/Card';
@@ -39,13 +38,16 @@ const STATUSES: ApplicationStatus[] = [
 
 const STATUS_OPTIONS = STATUSES.map((s) => ({ value: s, label: s }));
 
-const STATUS_VARIANT: Record<ApplicationStatus, 'success' | 'error' | 'warning' | 'secondary' | 'default'> = {
+const STATUS_VARIANT: Record<
+  ApplicationStatus,
+  'success' | 'error' | 'warning' | 'secondary' | 'default' | 'info'
+> = {
   Offer: 'success',
   Rejected: 'error',
   Interviewing: 'warning',
   Technical: 'warning',
   HR: 'warning',
-  Screening: 'warning',
+  Screening: 'info',
   Applied: 'default',
   Ghosted: 'secondary',
 };
@@ -77,9 +79,15 @@ const EmptyState: React.FC = React.memo(() => (
   <Card padding="none">
     <CardContent className="px-6 py-20 text-center">
       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-        <Briefcase className="h-7 w-7 text-slate-400" aria-hidden="true" focusable="false" />
+        <Briefcase
+          className="h-7 w-7 text-slate-400"
+          aria-hidden="true"
+          focusable="false"
+        />
       </div>
-      <h3 className="mt-4 text-sm font-bold text-slate-900">No applications yet</h3>
+      <h3 className="mt-4 text-sm font-bold text-slate-900">
+        No applications yet
+      </h3>
       <p className="mx-auto mt-1 max-w-xs text-sm text-slate-500">
         Start tracking your job search by adding your first application.
       </p>
@@ -105,7 +113,8 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
   const sortedApps = useMemo(
     () =>
       [...apps].sort(
-        (a, b) => new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime(),
+        (a, b) =>
+          new Date(b.dateApplied).getTime() - new Date(a.dateApplied).getTime(),
       ),
     [apps],
   );
@@ -129,11 +138,11 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
   const hasApps = sortedApps.length > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-8">
+      {/* ── Page heading ─────────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             My Applications
           </h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -148,7 +157,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
         <EmptyState />
       ) : (
         <>
-          {/* ── Desktop table ──────────────────────────────────── */}
+          {/* ── Desktop table ────────────────────────────────── */}
           <div className="hidden lg:block">
             <Card padding="none">
               <div className="overflow-x-auto overscroll-x-contain">
@@ -157,35 +166,35 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                     <tr className="border-b border-slate-200 bg-slate-50/80">
                       <th
                         scope="col"
-                        className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                        className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                       >
                         Company
                       </th>
                       <th
                         scope="col"
-                        className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                        className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                       >
                         Position
                       </th>
                       <th
                         scope="col"
-                        className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                        className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                       >
                         Type / Role
                       </th>
                       <th
                         scope="col"
-                        className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                        className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                       >
                         Applied
                       </th>
                       <th
                         scope="col"
-                        className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                        className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                       >
                         Status
                       </th>
-                      <th scope="col" className="px-5 py-3.5">
+                      <th scope="col" className="px-6 py-4">
                         <span className="sr-only">Actions</span>
                       </th>
                     </tr>
@@ -194,7 +203,9 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                     {sortedApps.map((app) => {
                       const company = companyMap.get(app.companyId);
                       const companyName = company?.name ?? 'Unknown';
-                      const initials = companyName.slice(0, 2).toUpperCase();
+                      const initials = companyName
+                        .slice(0, 2)
+                        .toUpperCase();
 
                       return (
                         <tr
@@ -202,7 +213,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                           className="group transition-colors hover:bg-slate-50 focus-within:bg-slate-50"
                         >
                           {/* Company */}
-                          <td className="px-5 py-4">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500 transition-colors group-hover:bg-slate-900 group-hover:text-white"
@@ -221,7 +232,9 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                       aria-hidden="true"
                                       focusable="false"
                                     />
-                                    <span className="truncate">{company.location}</span>
+                                    <span className="truncate">
+                                      {company.location}
+                                    </span>
                                   </p>
                                 )}
                               </div>
@@ -229,14 +242,14 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                           </td>
 
                           {/* Position */}
-                          <td className="px-5 py-4">
+                          <td className="px-6 py-4">
                             <p className="text-sm font-semibold text-slate-900">
                               {app.position}
                             </p>
                           </td>
 
                           {/* Type / Role */}
-                          <td className="px-5 py-4">
+                          <td className="px-6 py-4">
                             <div className="flex flex-wrap gap-1.5">
                               <Badge variant="secondary" size="sm">
                                 {app.type}
@@ -248,14 +261,17 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                           </td>
 
                           {/* Date */}
-                          <td className="px-5 py-4">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-1.5 text-sm text-slate-600">
                               <Calendar
                                 className="h-3.5 w-3.5 shrink-0 text-slate-400"
                                 aria-hidden="true"
                                 focusable="false"
                               />
-                              <time dateTime={app.dateApplied} className="tabular-nums">
+                              <time
+                                dateTime={app.dateApplied}
+                                className="tabular-nums"
+                              >
                                 {formatDate(app.dateApplied)}
                               </time>
                             </div>
@@ -265,10 +281,12 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                           </td>
 
                           {/* Status */}
-                          <td className="px-5 py-4">
+                          <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <Badge
-                                variant={STATUS_VARIANT[app.status] ?? 'default'}
+                                variant={
+                                  STATUS_VARIANT[app.status] ?? 'default'
+                                }
                                 size="sm"
                               >
                                 {app.status}
@@ -277,7 +295,9 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                 <CustomDropdown<ApplicationStatus>
                                   id={`status-${app.id}`}
                                   value={app.status}
-                                  onChange={(v) => onUpdateStatus(app.id, v)}
+                                  onChange={(v) =>
+                                    onUpdateStatus(app.id, v)
+                                  }
                                   options={STATUS_OPTIONS}
                                   buttonClassName="text-xs py-1 px-2 border-slate-200"
                                 />
@@ -286,7 +306,7 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                           </td>
 
                           {/* Actions */}
-                          <td className="px-5 py-4">
+                          <td className="px-6 py-4">
                             <div className="flex justify-end gap-1">
                               <Tooltip content="Edit" side="top">
                                 <Button
@@ -309,7 +329,9 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={(e) => handleDelete(e, app.id)}
+                                  onClick={(e) =>
+                                    handleDelete(e, app.id)
+                                  }
                                   aria-label={`Delete ${app.position} at ${companyName}`}
                                   className="h-8 w-8 p-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                                 >
@@ -331,8 +353,11 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
             </Card>
           </div>
 
-          {/* ── Mobile / Tablet cards ──────────────────────────── */}
-          <ul className="space-y-3 lg:hidden" aria-label="Applications list">
+          {/* ── Mobile / Tablet cards ────────────────────────── */}
+          <ul
+            className="space-y-3 lg:hidden"
+            aria-label="Applications list"
+          >
             {sortedApps.map((app) => {
               const company = companyMap.get(app.companyId);
               const companyName = company?.name ?? 'Unknown';
@@ -342,7 +367,6 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                 <li key={app.id}>
                   <Card padding="none" className="group">
                     <CardContent className="p-4">
-                      {/* Top row: avatar + info + actions */}
                       <div className="flex items-start gap-3">
                         <div
                           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-500"
@@ -359,7 +383,8 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                               </h3>
                               <p className="mt-0.5 truncate text-xs text-slate-500">
                                 {companyName}
-                                {company?.location && ` · ${company.location}`}
+                                {company?.location &&
+                                  ` · ${company.location}`}
                               </p>
                             </div>
 
@@ -382,7 +407,9 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                onClick={(e) => handleDelete(e, app.id)}
+                                onClick={(e) =>
+                                  handleDelete(e, app.id)
+                                }
                                 aria-label={`Delete ${app.position} at ${companyName}`}
                                 className="h-7 w-7 p-0 text-slate-400 hover:bg-red-50 hover:text-red-600"
                               >
@@ -395,10 +422,12 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                             </div>
                           </div>
 
-                          {/* Tags row */}
+                          {/* Tags */}
                           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
                             <Badge
-                              variant={STATUS_VARIANT[app.status] ?? 'default'}
+                              variant={
+                                STATUS_VARIANT[app.status] ?? 'default'
+                              }
                               size="sm"
                             >
                               {app.status}
@@ -419,18 +448,25 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                                 aria-hidden="true"
                                 focusable="false"
                               />
-                              <time dateTime={app.dateApplied} className="tabular-nums">
+                              <time
+                                dateTime={app.dateApplied}
+                                className="tabular-nums"
+                              >
                                 {formatDate(app.dateApplied)}
                               </time>
                               <span aria-hidden="true">·</span>
-                              <span>{getRelativeDay(app.dateApplied)}</span>
+                              <span>
+                                {getRelativeDay(app.dateApplied)}
+                              </span>
                             </p>
 
                             <div className="w-28 shrink-0">
                               <CustomDropdown<ApplicationStatus>
                                 id={`status-mobile-${app.id}`}
                                 value={app.status}
-                                onChange={(v) => onUpdateStatus(app.id, v)}
+                                onChange={(v) =>
+                                  onUpdateStatus(app.id, v)
+                                }
                                 options={STATUS_OPTIONS}
                                 buttonClassName="text-xs py-1 px-2 border-slate-200"
                               />

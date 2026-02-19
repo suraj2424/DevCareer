@@ -212,7 +212,6 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
       };
       reader.readAsText(file);
 
-      // Reset so the same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = '';
     },
     [currentUser.id, showToast],
@@ -262,7 +261,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
       className="mx-auto w-full max-w-4xl space-y-8"
       onKeyDown={handleKeyDown}
     >
-      {/* Page heading */}
+      {/* ── Page heading ─────────────────────────────────────── */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Profile
@@ -275,7 +274,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
       {/* ── User Information ────────────────────────────────── */}
       <Card padding="none" as="section" aria-labelledby="user-info-heading">
         <CardContent>
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5 sm:px-8">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
             <h2
               id="user-info-heading"
               className="text-lg font-bold tracking-tight text-slate-900"
@@ -318,7 +317,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
             )}
           </div>
 
-          <div className="px-6 py-6 sm:px-8">
+          <div className="px-6 py-5">
             <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               {infoFields.map((field) => {
                 const Icon = field.icon;
@@ -352,7 +351,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
                           />
                           {field.label}
                         </dt>
-                        <dd className="text-sm font-medium text-slate-900">
+                        <dd className="text-sm text-slate-900">
                           {field.dateTime ? (
                             <time dateTime={field.dateTime}>{field.value}</time>
                           ) : (
@@ -372,7 +371,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
       {/* ── Data Management ─────────────────────────────────── */}
       <Card padding="none" as="section" aria-labelledby="data-mgmt-heading">
         <CardContent>
-          <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+          <div className="border-b border-slate-100 px-6 py-5">
             <h2
               id="data-mgmt-heading"
               className="text-lg font-bold tracking-tight text-slate-900"
@@ -388,15 +387,15 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
             {/* Storage info */}
             {storageInfo && (
               <section
-                className="px-6 py-6 sm:px-8"
+                className="px-6 py-5"
                 aria-labelledby={storageHeadingId}
               >
                 <h3
                   id={storageHeadingId}
-                  className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900"
+                  className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400"
                 >
                   <Database
-                    className="h-4 w-4 text-slate-400"
+                    className="h-3.5 w-3.5 shrink-0"
                     aria-hidden="true"
                     focusable="false"
                   />
@@ -471,15 +470,15 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
             <div className="grid grid-cols-1 gap-0 divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               {/* Export */}
               <section
-                className="px-6 py-6 sm:px-8"
+                className="px-6 py-5"
                 aria-labelledby={exportHeadingId}
               >
                 <h3
                   id={exportHeadingId}
-                  className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"
+                  className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400"
                 >
                   <Download
-                    className="h-4 w-4 text-slate-400"
+                    className="h-3.5 w-3.5 shrink-0"
                     aria-hidden="true"
                     focusable="false"
                   />
@@ -502,15 +501,15 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
 
               {/* Import */}
               <section
-                className="px-6 py-6 sm:px-8"
+                className="px-6 py-5"
                 aria-labelledby={importHeadingId}
               >
                 <h3
                   id={importHeadingId}
-                  className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-900"
+                  className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400"
                 >
                   <Upload
-                    className="h-4 w-4 text-slate-400"
+                    className="h-3.5 w-3.5 shrink-0"
                     aria-hidden="true"
                     focusable="false"
                   />
@@ -553,7 +552,7 @@ const Profile: React.FC<ProfileProps> = ({ currentUser, onUpdateUser }) => {
         </CardContent>
       </Card>
 
-      {/* Toast notification */}
+      {/* Toast */}
       {toast && <Toast toast={toast} onDismiss={dismissToast} />}
     </div>
   );

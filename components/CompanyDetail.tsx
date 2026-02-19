@@ -4,7 +4,6 @@ import {
   MapPin,
   Building2,
   Star,
-  DollarSign,
   Users,
   Pencil,
   Trash2,
@@ -67,6 +66,22 @@ const StarRating: React.FC<{ rating: number; size?: 'sm' | 'md' }> = React.memo(
 
 StarRating.displayName = 'StarRating';
 
+const SalaryDisplay: React.FC<{ value: string; className?: string }> = React.memo(
+  ({ value, className }) => (
+    <span className={cn('inline-flex items-center gap-1.5', className)}>
+      <span className="tabular-nums">{value}</span>
+      <abbr
+        title="Cost to Company (annual)"
+        className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 no-underline"
+      >
+        ctc
+      </abbr>
+    </span>
+  ),
+);
+
+SalaryDisplay.displayName = 'SalaryDisplay';
+
 function formatDate(dateStr: string): string {
   try {
     return new Intl.DateTimeFormat('en-US', {
@@ -104,6 +119,37 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
     return counts;
   }, [applications]);
 
+  const heroStats = useMemo(
+    () => [
+      {
+        label: 'Fresher Pay',
+        value: company.fresherSalary,
+        icon: IndianRupee,
+        isSalary: true,
+      },
+      {
+        label: 'Team Size',
+        value: company.employeeRange,
+        icon: Users,
+        isSalary: false,
+      },
+      {
+        label: 'Applications',
+        value: applications.length,
+        icon: Briefcase,
+        isSalary: false,
+      },
+      {
+        label: 'Culture',
+        value: null,
+        icon: Star,
+        isSalary: false,
+        custom: <StarRating rating={company.cultureRating} size="sm" />,
+      },
+    ],
+    [company.fresherSalary, company.employeeRange, company.cultureRating, applications.length],
+  );
+
   return (
     <article
       className="mx-auto max-w-5xl"
@@ -130,7 +176,6 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
       {/* ── Hero banner ──────────────────────────────────────── */}
       <Card padding="none" className="overflow-hidden">
         <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-          {/* Decorative pattern */}
           <div
             className="absolute inset-0 opacity-[0.03]"
             style={{
@@ -142,11 +187,11 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
           />
 
           <div className="relative px-6 pb-6 pt-8 sm:px-10 sm:pt-10">
-            {/* Top actions */}
+            {/* Header row */}
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div
-                  className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border-2 border-white/10 bg-white/10 text-2xl font-black text-white backdrop-blur-sm sm:h-20 sm:w-20 sm:text-3xl"
+                  className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border-2 border-white/10 bg-white/10 text-lg font-bold text-white backdrop-blur-sm sm:h-16 sm:w-16 sm:text-xl"
                   aria-hidden="true"
                 >
                   {initials}
@@ -154,22 +199,22 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                 <div className="min-w-0">
                   <h1
                     id="company-detail-heading"
-                    className="truncate text-xl font-bold text-white sm:text-2xl"
+                    className="truncate text-lg font-bold tracking-tight text-white sm:text-xl"
                   >
                     {company.name}
                   </h1>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                    <span className="flex items-center gap-1.5 text-sm text-slate-300">
+                  <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="flex items-center gap-1.5 text-xs text-slate-300">
                       <MapPin
-                        className="h-3.5 w-3.5 shrink-0"
+                        className="h-3 w-3 shrink-0"
                         aria-hidden="true"
                         focusable="false"
                       />
                       {company.location}
                     </span>
-                    <span className="flex items-center gap-1.5 text-sm text-slate-300">
+                    <span className="flex items-center gap-1.5 text-xs text-slate-300">
                       <Building2
-                        className="h-3.5 w-3.5 shrink-0"
+                        className="h-3 w-3 shrink-0"
                         aria-hidden="true"
                         focusable="false"
                       />
@@ -205,38 +250,16 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
               </div>
             </div>
 
-            {/* Quick stats row */}
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                {
-                  label: 'Fresher Pay',
-                  value: company.fresherSalary,
-                  icon: IndianRupee,
-                },
-                {
-                  label: 'Team Size',
-                  value: company.employeeRange,
-                  icon: Users,
-                },
-                {
-                  label: 'Applications',
-                  value: applications.length,
-                  icon: Briefcase,
-                },
-                {
-                  label: 'Culture',
-                  value: null,
-                  icon: Star,
-                  custom: <StarRating rating={company.cultureRating} size="sm" />,
-                },
-              ].map((stat) => {
+            {/* Stats row */}
+            <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {heroStats.map((stat) => {
                 const Icon = stat.icon;
                 return (
                   <div
                     key={stat.label}
-                    className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-sm"
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur-sm sm:px-4 sm:py-3"
                   >
-                    <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <dt className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                       <Icon
                         className="h-3 w-3 shrink-0"
                         aria-hidden="true"
@@ -244,13 +267,22 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                       />
                       {stat.label}
                     </dt>
-                    <dd className="mt-1 text-lg font-bold tabular-nums text-white">
-                      {stat.custom ?? stat.value}
+                    <dd className="mt-1 text-sm font-bold tabular-nums text-white sm:text-base">
+                      {stat.custom ? (
+                        stat.custom
+                      ) : stat.isSalary ? (
+                        <SalaryDisplay
+                          value={String(stat.value)}
+                          className="text-white [&_abbr]:text-slate-400"
+                        />
+                      ) : (
+                        stat.value
+                      )}
                     </dd>
                   </div>
                 );
               })}
-            </div>
+            </dl>
           </div>
         </div>
 
@@ -260,7 +292,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
           <div className="lg:col-span-2">
             {/* About */}
             {company.description && (
-              <section className="px-6 py-6 sm:px-10" aria-labelledby="about-heading">
+              <section className="px-6 py-5" aria-labelledby="about-heading">
                 <h2
                   id="about-heading"
                   className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400"
@@ -275,7 +307,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
 
             {/* Applications */}
             <section
-              className="border-t border-slate-100 px-6 py-6 sm:px-10"
+              className="border-t border-slate-100 px-6 py-5"
               aria-labelledby="positions-heading"
             >
               <div className="mb-4 flex items-center justify-between">
@@ -297,10 +329,10 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                   {sortedApps.map((app) => (
                     <li
                       key={app.id}
-                      className="flex items-center gap-4 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3.5 transition-colors hover:border-slate-200 hover:bg-slate-50"
+                      className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3 transition-colors hover:border-slate-200 hover:bg-slate-50"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900">
+                        <p className="truncate text-sm font-semibold text-slate-900">
                           {app.position}
                         </p>
                         <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400">
@@ -315,7 +347,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                         </p>
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         {app.type && (
                           <Badge variant="secondary" size="sm">
                             {app.type}
@@ -351,7 +383,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
             {/* Status breakdown */}
             {Object.keys(statusSummary).length > 0 && (
               <section
-                className="px-6 py-6 sm:px-8"
+                className="px-6 py-5"
                 aria-labelledby="status-breakdown-heading"
               >
                 <h2
@@ -373,7 +405,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                             {status}
                           </Badge>
                         </dt>
-                        <dd className="text-sm font-bold tabular-nums text-slate-900">
+                        <dd className="text-sm font-semibold tabular-nums text-slate-900">
                           {count}
                         </dd>
                       </div>
@@ -385,7 +417,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
             {/* Custom fields */}
             {company.customFields.length > 0 && (
               <section
-                className="border-t border-slate-100 px-6 py-6 sm:px-8"
+                className="border-t border-slate-100 px-6 py-5"
                 aria-labelledby="extra-details-heading"
               >
                 <h2
@@ -397,7 +429,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                 <dl className="space-y-3">
                   {company.customFields.map((field, i) => (
                     <div key={i}>
-                      <dt className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      <dt className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                         <Tag
                           className="h-3 w-3 shrink-0"
                           aria-hidden="true"
@@ -405,7 +437,7 @@ const CompanyDetail: React.FC<CompanyDetailProps> = ({
                         />
                         {field.label}
                       </dt>
-                      <dd className="mt-0.5 text-sm font-medium text-slate-900">
+                      <dd className="mt-0.5 text-sm text-slate-900">
                         {field.value}
                       </dd>
                     </div>

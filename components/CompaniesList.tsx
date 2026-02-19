@@ -75,6 +75,22 @@ const EmptyState: React.FC<{ variant: 'grid' | 'list' }> = React.memo(({ variant
 
 EmptyState.displayName = 'EmptyState';
 
+const SalaryDisplay: React.FC<{ value: string; className?: string }> = React.memo(
+  ({ value, className }) => (
+    <span className={cn('inline-flex items-center gap-1', className)}>
+      <span className="tabular-nums">{value}</span>
+      <abbr
+        title="Cost to Company (annual)"
+        className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 no-underline"
+      >
+        ctc
+      </abbr>
+    </span>
+  ),
+);
+
+SalaryDisplay.displayName = 'SalaryDisplay';
+
 const CompaniesList: React.FC<CompaniesListProps> = ({
   companies,
   onViewDetail,
@@ -120,11 +136,11 @@ const CompaniesList: React.FC<CompaniesListProps> = ({
   const hasCompanies = sortedCompanies.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Company Hub
           </h2>
           <p className="mt-1 text-sm text-slate-500">
@@ -272,8 +288,8 @@ const CompaniesList: React.FC<CompaniesListProps> = ({
                         />
                         Fresher Pay
                       </dt>
-                      <dd className="text-xs font-bold tabular-nums text-slate-900">
-                        {company.fresherSalary}
+                      <dd className="text-xs font-bold text-slate-900">
+                        <SalaryDisplay value={company.fresherSalary} />
                       </dd>
                     </div>
                     <div className="flex items-center justify-between">
@@ -312,35 +328,35 @@ const CompaniesList: React.FC<CompaniesListProps> = ({
                 <tr className="border-b border-slate-200 bg-slate-50/80">
                   <th
                     scope="col"
-                    className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                    className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                   >
                     Company
                   </th>
                   <th
                     scope="col"
-                    className="hidden px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 sm:table-cell"
+                    className="hidden px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 sm:table-cell"
                   >
                     Location
                   </th>
                   <th
                     scope="col"
-                    className="hidden px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 md:table-cell"
+                    className="hidden px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 md:table-cell"
                   >
                     Salary
                   </th>
                   <th
                     scope="col"
-                    className="hidden px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500 md:table-cell"
+                    className="hidden px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 md:table-cell"
                   >
                     Culture
                   </th>
                   <th
                     scope="col"
-                    className="px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500"
+                    className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500"
                   >
                     Type
                   </th>
-                  <th scope="col" className="px-5 py-3.5">
+                  <th scope="col" className="px-6 py-4">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
@@ -351,7 +367,7 @@ const CompaniesList: React.FC<CompaniesListProps> = ({
                     key={company.id}
                     className="group transition-colors hover:bg-slate-50 focus-within:bg-slate-50"
                   >
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       <button
                         type="button"
                         onClick={() => onViewDetail(company.id)}
@@ -378,7 +394,7 @@ const CompaniesList: React.FC<CompaniesListProps> = ({
                         />
                       </button>
                     </td>
-                    <td className="hidden px-5 py-4 sm:table-cell">
+                    <td className="hidden px-6 py-4 sm:table-cell">
                       <span className="flex items-center gap-1 text-sm text-slate-600">
                         <MapPin
                           className="h-3.5 w-3.5 shrink-0 text-slate-400"
@@ -388,23 +404,24 @@ const CompaniesList: React.FC<CompaniesListProps> = ({
                         {company.location}
                       </span>
                     </td>
-                    <td className="hidden px-5 py-4 md:table-cell">
-                      <span className="text-sm font-semibold tabular-nums text-slate-900">
-                        {company.fresherSalary}
-                      </span>
+                    <td className="hidden px-6 py-4 md:table-cell">
+                      <SalaryDisplay
+                        value={company.fresherSalary}
+                        className="text-sm font-semibold text-slate-900"
+                      />
                     </td>
-                    <td className="hidden px-5 py-4 md:table-cell">
+                    <td className="hidden px-6 py-4 md:table-cell">
                       <StarRating
                         rating={company.cultureRating}
                         label={`${company.name} culture: ${company.cultureRating} out of 5`}
                       />
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       <Badge variant="secondary" size="sm">
                         {company.type}
                       </Badge>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-6 py-4">
                       <div className="flex justify-end gap-1">
                         <Tooltip content="Edit" side="top">
                           <Button

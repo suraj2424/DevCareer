@@ -246,7 +246,7 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-8 py-6">
           {view === 'dashboard' && (
             <Dashboard 
               apps={applications} 
